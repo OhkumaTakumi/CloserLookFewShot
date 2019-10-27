@@ -1,0 +1,54 @@
+Time: 20191017-102856, Setting: CUB-novel-ResNet18-baseline 5shot 5way_test, Acc: 600 Test Acc = 73.22% +- 0.68% 
+Time: 20191020-181052, Setting: cross-novel-ResNet18-baseline 5shot 5way_test, Acc: 600 Test Acc = 62.35% +- 0.71% 
+Time: 20191020-181433, Setting: cross-novel-ResNet18-relationnet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 59.05% +- 0.73%
+Time: 20191020-181732, Setting: cross-novel-ResNet18-maml_approx 5shot 5way_train 5way_test, Acc: 600 Test Acc = 49.01% +- 0.70% 
+Time: 20191020-181740, Setting: cross-novel-ResNet18-matchingnet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 56.67% +- 0.74% 
+Time: 20191020-181744, Setting: cross-novel-ResNet18-protonet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 60.70% +- 0.71%
+Time: 20191020-182115, Setting: cross-novel-ResNet18-baseline++ 5shot 5way_test, Acc: 600 Test Acc = 46.39% +- 0.72%
+Time: 20191020-182527, Setting: CUB-novel-ResNet18-relationnet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 69.35% +- 0.78% 
+Time: 20191020-182815, Setting: CUB-novel-ResNet18-maml_approx 5shot 5way_train 5way_test, Acc: 600 Test Acc = 67.35% +- 0.82% 
+Time: 20191020-182822, Setting: CUB-novel-ResNet18-matchingnet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 69.97% +- 0.78% 
+Time: 20191020-182826, Setting: CUB-novel-ResNet18-protonet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 71.54% +- 0.76% 
+Time: 20191020-183143, Setting: CUB-novel-ResNet18-baseline++ 5shot 5way_test, Acc: 600 Test Acc = 60.88% +- 0.79% 
+
+Time: 20191023-082128, Setting: cross-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 67.11% +- 0.70% 
+Time: 20191023-082146, Setting: cross-novel-ResNet18-relationnet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 53.49% +- 0.69% 
+Time: 20191023-082458, Setting: cross-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 49.96% +- 0.69% 
+Time: 20191023-082508, Setting: cross-novel-ResNet18-matchingnet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 52.62% +- 0.71% 
+Time: 20191023-082512, Setting: cross-novel-ResNet18-protonet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 62.21% +- 0.72% 
+Time: 20191023-082856, Setting: cross-novel-ResNet18-baseline++-aug 5shot 5way_test, Acc: 600 Test Acc = 61.63% +- 0.76% 
+Time: 20191025-122540, Setting: CUB_mini-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 73.60% +- 0.62%
+Time: 20191025-122552, Setting: CUB_mini-novel-ResNet18-relationnet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 79.86% +- 0.64%
+Time: 20191025-122838, Setting: CUB_mini-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 80.31% +- 0.73%
+Time: 20191025-122845, Setting: CUB_mini-novel-ResNet18-matchingnet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 85.06% +- 0.58%
+Time: 20191025-122849, Setting: CUB_mini-novel-ResNet18-protonet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 87.38% +- 0.56%
+Time: 20191025-123210, Setting: CUB_mini-novel-ResNet18-baseline++-aug 5shot 5way_test, Acc: 600 Test Acc = 89.40% +- 0.43%
+Time: 20191024-093621, Setting: CUB-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 83.10% +- 0.51% 
+Time: 20191024-093635, Setting: CUB-novel-ResNet18-relationnet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 83.59% +- 0.56% 
+Time: 20191024-093930, Setting: CUB-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 82.18% +- 0.64% 
+Time: 20191024-093938, Setting: CUB-novel-ResNet18-matchingnet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 85.00% +- 0.57% 
+Time: 20191024-093941, Setting: CUB-novel-ResNet18-protonet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 87.44% +- 0.46% 
+Time: 20191024-094309, Setting: CUB-novel-ResNet18-baseline++-aug 5shot 5way_test, Acc: 600 Test Acc = 80.41% +- 0.57% 
+
+Time: 20191025-113039, Setting: miniImagenet-novel-ResNet18-baseline-aug_16classes 5shot 5way_test, Acc: 600 Test Acc = 69.40% +- 0.65% 
+Time: 20191025-113339, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_16classes 5shot 5way_train 5way_test, Acc: 600 Test Acc = 55.80% +- 0.81% 
+Time: 20191025-113343, Setting: miniImagenet-novel-ResNet18-protonet-aug_16classes 5shot 5way_train 5way_test, Acc: 600 Test Acc = 63.29% +- 0.73% 
+Time: 20191025-113607, Setting: miniImagenet-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 74.91% +- 0.64% 
+Time: 20191025-113905, Setting: miniImagenet-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 65.91% +- 0.79% 
+Time: 20191025-113909, Setting: miniImagenet-novel-ResNet18-protonet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 73.50% +- 0.64% 
+
+
+Time: 20191025-124643, Setting: CUB_mini-novel-ResNet18-baseline 5shot 5way_test, Acc: 600 Test Acc = 74.84% +- 0.64% 
+Time: 20191025-124656, Setting: CUB_mini-novel-ResNet18-relationnet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 74.37% +- 0.68% 
+Time: 20191025-124948, Setting: CUB_mini-novel-ResNet18-maml_approx 5shot 5way_train 5way_test, Acc: 600 Test Acc = 71.06% +- 0.82% 
+Time: 20191025-124956, Setting: CUB_mini-novel-ResNet18-matchingnet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 76.06% +- 0.67% 
+Time: 20191025-125000, Setting: CUB_mini-novel-ResNet18-protonet 5shot 5way_train 5way_test, Acc: 600 Test Acc = 78.02% +- 0.64%
+Time: 20191025-125344, Setting: CUB_mini-novel-ResNet18-baseline++ 5shot 5way_test, Acc: 600 Test Acc = 77.67% +- 0.65%
+
+Time: 20191027-104033, Setting: miniImagenet-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 86.88% +- 0.48% 
+Time: 20191027-104329, Setting: miniImagenet-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 78.75% +- 0.67% 
+Time: 20191027-104333, Setting: miniImagenet-novel-ResNet18-protonet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 83.68% +- 0.58% 
+Time: 20191027-135124, Setting: miniImagenet-novel-ResNet18-baseline-aug_256classes 5shot 5way_test, Acc: 600 Test Acc = 83.14% +- 0.51% 
+Time: 20191027-135421, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_256classes 5shot 5way_train 5way_test, Acc: 600 Test Acc = 76.62% +- 0.72% 
+Time: 20191027-135425, Setting: miniImagenet-novel-ResNet18-protonet-aug_256classes 5shot 5way_train 5way_test, Acc: 600 Test Acc = 81.32% +- 0.55% 
+
