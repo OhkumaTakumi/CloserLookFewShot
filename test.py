@@ -89,11 +89,21 @@ if __name__ == '__main__':
     else:
        raise ValueError('Unknown method')
 
-    model = model.cuda()
+    device = params.device
+    with torch.cuda.device(device):
+        model = model.cuda()
 
     checkpoint_dir = '%s/checkpoints/%s/%s_%s' %(configs.save_dir, params.dataset, params.model, params.method)
+
+    if params.dataset == 'CUB' and params.train_class == "CUB_mini":
+        checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "CUB_mini", params.model, params.method)
+    if params.train_class == "all_Imagenet":
+        checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "all_Imagenet", params.model, params.method)
+
     if params.train_aug:
         checkpoint_dir += '_aug'
+    if params.selection_classes != -1:
+        checkpoint_dir += "_{0}classes".format(params.selection_classes)
     if not params.method in ['baseline', 'baseline++'] :
         checkpoint_dir += '_%dway_%dshot' %( params.train_n_way, params.n_shot)
 
@@ -113,55 +123,66 @@ if __name__ == '__main__':
         split_str = split + "_" +str(params.save_iter)
     else:
         split_str = split
-    if params.method in ['maml', 'maml_approx']: #maml do not support testing with feature
-        if 'Conv' in params.model:
-            if params.dataset in ['omniglot', 'cross_char']:
-                image_size = 28
-            else:
-                image_size = 84 
-        else:
-            image_size = 224
 
-        datamgr         = SetDataManager(image_size, n_eposide = iter_num, n_query = 15 , **few_shot_params)
+    with torch.cuda.device(device):
+        if params.method in ['maml', 'maml_approx']: #maml do not support testing with feature
+            if 'Conv' in params.model:
+                if params.dataset in ['omniglot', 'cross_char']:
+                    image_size = 28
+                else:
+                    image_size = 84
+            else:
+                image_size = 224
+
+            datamgr         = SetDataManager(image_size, n_eposide = iter_num, n_query = 15 , **few_shot_params)
         
-        if params.dataset == 'cross':
-            if split == 'base':
-                loadfile = configs.data_dir['miniImagenet'] + 'all.json' 
+            if params.dataset == 'cross':
+                if split == 'base':
+                    loadfile = configs.data_dir['miniImagenet'] + 'all.json'
+                else:
+                    loadfile   = configs.data_dir['CUB'] + split +'.json'
+            elif params.dataset == 'cross_char':
+                if split == 'base':
+                    loadfile = configs.data_dir['omniglot'] + 'noLatin.json'
+                else:
+                    loadfile  = configs.data_dir['emnist'] + split +'.json'
             else:
-                loadfile   = configs.data_dir['CUB'] + split +'.json'
-        elif params.dataset == 'cross_char':
-            if split == 'base':
-                loadfile = configs.data_dir['omniglot'] + 'noLatin.json' 
-            else:
-                loadfile  = configs.data_dir['emnist'] + split +'.json' 
-        else: 
-            loadfile    = configs.data_dir[params.dataset] + split + '.json'
+                loadfile    = configs.data_dir[params.dataset] + split + '.json'
 
-        novel_loader     = datamgr.get_data_loader( loadfile, aug = False)
-        if params.adaptation:
-            model.task_update_num = 100 #We perform adaptation on MAML simply by updating more times.
-        model.eval()
-        acc_mean, acc_std = model.test_loop( novel_loader, return_std = True)
+            novel_loader     = datamgr.get_data_loader( loadfile, aug = False)
+            if params.adaptation:
+                model.task_update_num = 100 #We perform adaptation on MAML simply by updating more times.
+            model.eval()
+            acc_mean, acc_std = model.test_loop( novel_loader, return_std = True)
 
-    else:
-        novel_file = os.path.join( checkpoint_dir.replace("checkpoints","features"), split_str +".hdf5") #defaut split = novel, but you can also test base or val classes
-        cl_data_file = feat_loader.init_loader(novel_file)
-
-        for i in range(iter_num):
-            acc = feature_evaluation(cl_data_file, model, n_query = 15, adaptation = params.adaptation, **few_shot_params)
-            acc_all.append(acc)
-
-        acc_all  = np.asarray(acc_all)
-        acc_mean = np.mean(acc_all)
-        acc_std  = np.std(acc_all)
-        print('%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num)))
-    with open('./record/results.txt' , 'a') as f:
-        timestamp = time.strftime("%Y%m%d-%H%M%S", time.localtime()) 
-        aug_str = '-aug' if params.train_aug else ''
-        aug_str += '-adapted' if params.adaptation else ''
-        if params.method in ['baseline', 'baseline++'] :
-            exp_setting = '%s-%s-%s-%s%s %sshot %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str, params.n_shot, params.test_n_way )
         else:
-            exp_setting = '%s-%s-%s-%s%s %sshot %sway_train %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str , params.n_shot , params.train_n_way, params.test_n_way )
-        acc_str = '%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num))
-        f.write( 'Time: %s, Setting: %s, Acc: %s \n' %(timestamp,exp_setting,acc_str)  )
+            novel_file = os.path.join( checkpoint_dir.replace("checkpoints","features"), split_str +".hdf5") #defaut split = novel, but you can also test base or val classes
+            print(novel_file)
+            cl_data_file = feat_loader.init_loader(novel_file)
+
+            for i in range(iter_num):
+                if i % 10 == 0:
+                    print("{0}/{1}".format(i, iter_num))
+                acc = feature_evaluation(cl_data_file, model, n_query = 15, adaptation = params.adaptation, **few_shot_params)
+                acc_all.append(acc)
+
+            acc_all  = np.asarray(acc_all)
+            acc_mean = np.mean(acc_all)
+            acc_std  = np.std(acc_all)
+            print('%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num)))
+        with open('./record/results.txt' , 'a') as f:
+            timestamp = time.strftime("%Y%m%d-%H%M%S", time.localtime())
+            aug_str = '-aug' if params.train_aug else ''
+            if params.selection_classes != -1:
+                aug_str += "_{0}classes".format(params.selection_classes)
+            aug_str += '-adapted' if params.adaptation else ''
+
+            if params.train_class == 'CUB_mini':
+                params.dataset = "CUB_mini"
+
+            if params.method in ['baseline', 'baseline++'] :
+                exp_setting = '%s-%s-%s-%s%s %sshot %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str, params.n_shot, params.test_n_way )
+            else:
+                exp_setting = '%s-%s-%s-%s%s %sshot %sway_train %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str , params.n_shot , params.train_n_way, params.test_n_way )
+            acc_str = '%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num))
+            f.write( 'Time: %s, Setting: %s, Acc: %s \n' %(timestamp,exp_setting,acc_str)  )

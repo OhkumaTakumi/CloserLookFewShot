@@ -17,9 +17,12 @@ from methods.protonet import ProtoNet
 from methods.matchingnet import MatchingNet
 from methods.relationnet import RelationNet
 from methods.maml import MAML
-from io_utils import model_dict, parse_args, get_resume_file  
+from io_utils import model_dict, parse_args, get_resume_file
 
-def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch, params):    
+from class_selection import classselection
+
+def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch, params):
+
     if optimization == 'Adam':
         optimizer = torch.optim.Adam(model.parameters())
     else:
@@ -28,14 +31,18 @@ def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch,
     max_acc = 0       
 
     for epoch in range(start_epoch,stop_epoch):
-        model.train()
-        model.train_loop(epoch, base_loader,  optimizer ) #model are called by reference, no need to return 
-        model.eval()
+        print(stop_epoch)
+        device = params.device
+        with torch.cuda.device(device):
+            model.train()
+            model.train_loop(epoch, base_loader,  optimizer ) #model are called by reference, no need to return
+            model.eval()
 
-        if not os.path.isdir(params.checkpoint_dir):
-            os.makedirs(params.checkpoint_dir)
+            if not os.path.isdir(params.checkpoint_dir):
+                os.makedirs(params.checkpoint_dir)
 
-        acc = model.test_loop( val_loader)
+            acc = model.test_loop( val_loader)
+
         if acc > max_acc : #for baseline and baseline++, we don't use validation in default and we let acc = -1, but we allow options to validate with DB index
             print("best model! save...")
             max_acc = acc
@@ -43,8 +50,13 @@ def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch,
             torch.save({'epoch':epoch, 'state':model.state_dict()}, outfile)
 
         if (epoch % params.save_freq==0) or (epoch==stop_epoch-1):
+            if not os.path.exists(params.checkpoint_dir):
+                os.mkdir(params.checkpoint_dir)
             outfile = os.path.join(params.checkpoint_dir, '{:d}.tar'.format(epoch))
             torch.save({'epoch':epoch, 'state':model.state_dict()}, outfile)
+            print("Saved!")
+
+        print(params.checkpoint_dir)
 
     return model
 
@@ -52,16 +64,30 @@ if __name__=='__main__':
     np.random.seed(10)
     params = parse_args('train')
 
-
     if params.dataset == 'cross':
-        base_file = configs.data_dir['miniImagenet'] + 'all.json' 
+        base_file = configs.data_dir['miniImagenet'] + 'all.json'
         val_file   = configs.data_dir['CUB'] + 'val.json' 
     elif params.dataset == 'cross_char':
         base_file = configs.data_dir['omniglot'] + 'noLatin.json' 
-        val_file   = configs.data_dir['emnist'] + 'val.json' 
+        val_file   = configs.data_dir['emnist'] + 'val.json'
+    elif params.dataset == 'CUB' and params.train_class == "CUB_mini":
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/base_CUB_miniImagenet.json"
+        val_file = configs.data_dir[params.dataset] + 'val.json'
+        params.num_classes = 300
+    elif params.train_class == "all_Imagenet":
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/all_Imagenet.json"
+        val_file = configs.data_dir[params.dataset] + 'val.json'
+        params.num_classes = 964
     else:
         base_file = configs.data_dir[params.dataset] + 'base.json' 
-        val_file   = configs.data_dir[params.dataset] + 'val.json' 
+        val_file   = configs.data_dir[params.dataset] + 'val.json'
+
+    if params.selection_classes != -1:
+        output = "/home/takumi/research/CloserLookFewShot/filelists/sub_classes.json"
+        classselection(base_file, params.selection_classes, output)
+        base_file = output
+        params.num_classes = params.selection_classes
+
          
     if 'Conv' in params.model:
         if params.dataset in ['omniglot', 'cross_char']:
@@ -81,12 +107,16 @@ if __name__=='__main__':
         if params.method in ['baseline', 'baseline++'] :
             if params.dataset in ['omniglot', 'cross_char']:
                 params.stop_epoch = 5
+            elif params.train_class == "CUB_mini":
+                params.stop_epoch = 400
             elif params.dataset in ['CUB']:
                 params.stop_epoch = 200 # This is different as stated in the open-review paper. However, using 400 epoch in baseline actually lead to over-fitting
             elif params.dataset in ['miniImagenet', 'cross']:
                 params.stop_epoch = 400
             else:
                 params.stop_epoch = 400 #default
+        elif params.method == 'maml' or params.method == 'maml_approx':
+            params.stop_epoch = 200
         else: #meta-learning methods
             if params.n_shot == 1:
                 params.stop_epoch = 600
@@ -153,15 +183,28 @@ if __name__=='__main__':
     else:
        raise ValueError('Unknown method')
 
-    model = model.cuda()
+    device = params.device
+    with torch.cuda.device(device):
+        model = model.cuda()
 
     params.checkpoint_dir = '%s/checkpoints/%s/%s_%s' %(configs.save_dir, params.dataset, params.model, params.method)
+
+    if params.dataset == 'CUB' and params.train_class == "CUB_mini":
+        params.checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "CUB_mini", params.model, params.method)
+    if params.train_class == "all_Imagenet":
+        params.checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "all_Imagenet", params.model, params.method)
+
+
     if params.train_aug:
         params.checkpoint_dir += '_aug'
+    if params.selection_classes != -1:
+        params.checkpoint_dir += "_{0}classes".format(params.selection_classes)
     if not params.method  in ['baseline', 'baseline++']: 
         params.checkpoint_dir += '_%dway_%dshot' %( params.train_n_way, params.n_shot)
 
     if not os.path.isdir(params.checkpoint_dir):
+        #os.chmod(os.path.split(params.checkpoint_dir)[0], 0o777)
+
         os.makedirs(params.checkpoint_dir)
 
     start_epoch = params.start_epoch
@@ -177,8 +220,11 @@ if __name__=='__main__':
             model.load_state_dict(tmp['state'])
     elif params.warmup: #We also support warmup from pretrained baseline feature, but we never used in our paper
         baseline_checkpoint_dir = '%s/checkpoints/%s/%s_%s' %(configs.save_dir, params.dataset, params.model, 'baseline')
+
         if params.train_aug:
             baseline_checkpoint_dir += '_aug'
+        if params.selection_classes != -1:
+            baseline_checkpoint_dir += "_{0}classes".format(params.selection_classes)
         warmup_resume_file = get_resume_file(baseline_checkpoint_dir)
         tmp = torch.load(warmup_resume_file)
         if tmp is not None: 
@@ -193,5 +239,7 @@ if __name__=='__main__':
             model.feature.load_state_dict(state)
         else:
             raise ValueError('No warm_up file')
+
+
 
     model = train(base_loader, val_loader,  model, optimization, start_epoch, stop_epoch, params)

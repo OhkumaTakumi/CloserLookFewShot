@@ -71,8 +71,16 @@ if __name__ == '__main__':
         loadfile = configs.data_dir[params.dataset] + split + '.json'
 
     checkpoint_dir = '%s/checkpoints/%s/%s_%s' %(configs.save_dir, params.dataset, params.model, params.method)
+
+    if params.dataset == 'CUB' and params.train_class == "CUB_mini":
+        checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "CUB_mini", params.model, params.method)
+    if params.train_class == "all_Imagenet":
+        checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "all_Imagenet", params.model, params.method)
+
     if params.train_aug:
         checkpoint_dir += '_aug'
+    if params.selection_classes != -1:
+        checkpoint_dir += "_{0}classes".format(params.selection_classes)
     if not params.method in ['baseline', 'baseline++'] :
         checkpoint_dir += '_%dway_%dshot' %( params.train_n_way, params.n_shot)
 
@@ -82,6 +90,7 @@ if __name__ == '__main__':
 #        modelfile   = get_resume_file(checkpoint_dir) #comment in 2019/08/03 updates as the validation of baseline/baseline++ is added
     else:
         modelfile   = get_best_file(checkpoint_dir)
+
 
     if params.save_iter != -1:
         outfile = os.path.join( checkpoint_dir.replace("checkpoints","features"), split + "_" + str(params.save_iter)+ ".hdf5") 
@@ -105,7 +114,9 @@ if __name__ == '__main__':
     else:
         model = model_dict[params.model]()
 
-    model = model.cuda()
+    device = params.device
+    with torch.cuda.device(device):
+        model = model.cuda()
     tmp = torch.load(modelfile)
     state = tmp['state']
     state_keys = list(state.keys())
@@ -120,6 +131,10 @@ if __name__ == '__main__':
     model.eval()
 
     dirname = os.path.dirname(outfile)
+    print(outfile)
+    print(dirname)
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
-    save_features(model, data_loader, outfile)
+
+    with torch.cuda.device(device):
+        save_features(model, data_loader, outfile)
