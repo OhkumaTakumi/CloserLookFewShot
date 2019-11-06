@@ -78,4 +78,14 @@ Time: 20191101-175219, Setting: miniImagenet-novel-ResNet18-relationnet-aug_2met
 Time: 20191101-175506, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_2method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 70.40% +- 0.76% 
 Time: 20191101-175513, Setting: miniImagenet-novel-ResNet18-matchingnet-aug_2method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 73.66% +- 0.65% 
 Time: 20191101-175517, Setting: miniImagenet-novel-ResNet18-protonet-aug_2method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 76.61% +- 0.66% 
-Time: 20191101-175837, Setting: miniImagenet-novel-ResNet18-baseline++-aug_2method 5shot 5way_test, Acc: 600 Test Acc = 81.64% +- 0.60% 
+Time: 20191101-175837, Setting: miniImagenet-novel-ResNet18-baseline++-aug_2method 5shot 5way_test, Acc: 600 Test Acc = 81.64% +- 0.60%
+
+Time: 20191103-091440, Setting: miniImagenet-novel-ResNet18_quarter-baseline-aug_1method 5shot 5way_test, Acc: 600 Test Acc = 79.03% +- 0.61% 
+Time: 20191103-091607, Setting: miniImagenet-novel-ResNet18_quarter-maml_approx-aug_1method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 70.52% +- 0.73% 
+Time: 20191103-091610, Setting: miniImagenet-novel-ResNet18_quarter-protonet-aug_1method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 76.24% +- 0.57%
+
+Time: 20191103-194607, Setting: miniImagenet-novel-ResNet18-baseline-aug_3method 5shot 5way_test, Acc: 600 Test Acc = 86.54% +- 0.46% 
+Time: 20191103-194917, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_3method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 82.55% +- 0.64% 
+Time: 20191103-194922, Setting: miniImagenet-novel-ResNet18-protonet-aug_3method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 86.67% +- 0.49% 
+
+
