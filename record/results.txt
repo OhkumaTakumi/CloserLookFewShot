@@ -116,3 +116,16 @@ Time: 20191111-193520, Setting: all_Imagenet-novel-ResNet18-protonet-aug 5shot 5
 Time: 20191112-065407, Setting: miniImagenet-novel-ResNet18-baseline-aug_3method 5shot 5way_test, Acc: 600 Test Acc = 84.91% +- 0.48%  2_times_epoch
 Time: 20191112-065700, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_3method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 84.63% +- 0.61% 2_times_epoch
 Time: 20191112-065704, Setting: miniImagenet-novel-ResNet18-protonet-aug_3method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 88.87% +- 0.44%  2_times_epoch
+
+Time: 20191113-180138, Setting: all_Imagenet-novel-ResNet18-protonet-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 88.87% +- 0.43%  3_times_epoch
+Time: 20191115-040046, Setting: all_Imagenet-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 85.14% +- 0.58% 3_times_epoch
+
+Time: 20191115-103018, Setting: miniImagenet-novel-ResNet18-protonet-aug_3method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 89.74% +- 0.45% 3_times_epoch
+Time: 20191115-103014, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_3method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 86.45% +- 0.55% 3_times_epoch
+
+Time: 20191116-032823, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_1method 5shot 5way_train 5way_test, Acc: 600 Test Acc = 78.01% +- 0.76%  complete
+Time: 20191116-193145, Setting: miniImagenet-novel-ResNet18-maml_approx-aug 5shot 5way_train 5way_test, Acc: 600 Test Acc = 67.29% +- 0.75%  complete
+Time: 20191116-225124, Setting: miniImagenet-novel-ResNet18-maml_approx-aug_16classes 5shot 5way_train 5way_test, Acc: 600 Test Acc = 54.75% +- 0.77% complete
+Time: 20191117-054312, Setting: miniImagenet-novel-ResNet18_quarter-baseline-aug_3method 5shot 5way_test, Acc: 600 Test Acc = 83.73% +- 0.53%
+Time: 20191118-020048, Setting: all_Imagenet-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 81.50% +- 0.63% 
+Time: 20191118-123114, Setting: all_Imagenet-novel-ResNet18-baseline-aug 5shot 5way_test, Acc: 600 Test Acc = 86.66% +- 0.48% 
