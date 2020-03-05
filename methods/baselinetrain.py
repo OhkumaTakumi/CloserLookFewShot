@@ -19,7 +19,7 @@ class BaselineTrain(nn.Module):
         self.loss_type = loss_type  #'softmax' #'dist'
         self.num_class = num_class
         self.loss_fn = nn.CrossEntropyLoss()
-        self.DBval = False; #only set True for CUB dataset, see issue #31
+        self.DBval = True; #only set True for CUB dataset, see issue #31
 
     def forward(self,x):
         x    = Variable(x.cuda())
@@ -44,9 +44,22 @@ class BaselineTrain(nn.Module):
 
             avg_loss = avg_loss+loss.item()
 
-            if i % print_freq==0:
-                #print(optimizer.state_dict()['param_groups'][0]['lr'])
-                print('Epoch {:d} | Batch {:d}/{:d} | Loss {:f}'.format(epoch, i, len(train_loader), avg_loss/float(i+1)  ))
+            #if i % print_freq==0:
+            #    #print(optimizer.state_dict()['param_groups'][0]['lr'])
+            #    print('Epoch {:d} | Batch {:d}/{:d} | Loss {:f}'.format(epoch, i, len(train_loader), avg_loss/float(i+1)  ))
+
+    def val_accuracy(self, epoch, val_loader):
+        n_total = 0
+        n_acc = 0
+        for i, (x, y) in enumerate(val_loader):
+            x = x.cuda()
+            outs = self.forward(x).data.cpu().argmax(1)
+            labels = y.cpu()
+            n_acc += (outs == labels).float().sum().item()
+            n_total += x.size(0)
+        print('Epoch {:d} | Accuracy {:f}'.format(epoch, n_acc/n_total))
+
+
                      
     def test_loop(self, val_loader):
         if self.DBval:

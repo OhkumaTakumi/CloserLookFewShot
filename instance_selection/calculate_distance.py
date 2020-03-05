@@ -9,7 +9,7 @@ import os
 import glob
 from matplotlib import  pyplot as plt
 
-import configs
+
 import backbone
 from data.datamgr import SimpleDataManager, SetDataManager, TransformLoader
 from methods.baselinetrain import BaselineTrain
@@ -46,11 +46,19 @@ def task_train_reader(task_file, n_shot=5, n_way=5, image_size=224):
     transformer = image_transform.get_composed_transform(False)
     with open(task_file) as f:
         task = json.load(f)
+
+    total_count = 0
+    while True:
+        if task["train_image_labels"][total_count] == 0:
+            total_count += 1
+        else:
+            break
+
     train_image_list = []
     for i in range(n_way):
         images = torch.zeros(0, 3, image_size, image_size)
         for j in range(n_shot):
-            image_path = task["train_image_names"][50*i + j]
+            image_path = task["train_image_names"][total_count*i + j]
             img = Image.open(image_path).convert('RGB')
             img = transformer(img)
             images = torch.cat([images, img.unsqueeze(0)], dim=0)
@@ -62,7 +70,7 @@ def task_train_reader(task_file, n_shot=5, n_way=5, image_size=224):
 
 
 
-def calculate_dist(n_way, n_shot, task_num, episode, batch_size=128):
+def calculate_dist(n_way, n_shot, task_num, episode, batch_size=64):
 
     model = ProtoNet( model_dict["ResNet18"], n_way, n_shot)
 
@@ -152,4 +160,13 @@ task_num = 0
 episode = 300
 batch_size = 128
 
-calculate_dist(n_way, n_shot, task_num, episode)
+for i in range(20, 22):
+    print(i, 5000)
+    calculate_dist(n_way, n_shot, i, 5000)
+
+
+for i in range(20, 22):
+    print(i, 300)
+    calculate_dist(n_way, n_shot, i, 300)
+
+

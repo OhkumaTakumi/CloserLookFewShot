@@ -2,6 +2,10 @@ import json
 import copy
 import random
 
+import nltk
+from nltk.corpus import wordnet as wn
+from collections import deque
+
 def classselection(file_data, class_num, output):
     with open(file_data) as f:
         dataset = json.load(f)
@@ -39,8 +43,26 @@ def classselection(file_data, class_num, output):
     with open(output, "w") as f:
         json.dump(new_file, f)
 
+def reduce_image(file_data, reduce_rate, output):
+    if reduce_rate > 1:
+        print("reduce_rate should be no more than 1")
+        return
+    with open(file_data) as f:
+        dataset = json.load(f)
 
-input = "/home/takumi/research/CloserLookFewShot/filelists/miniImagenet/base.json"
-output = "/home/takumi/research/CloserLookFewShot/filelists/miniImagenet_sub.json"
+    num_image = len(dataset["image_labels"])
 
-classselection(input, 10, output)
+    selected_num_image = int(num_image*reduce_rate)
+
+    image_id = [i for i in range(num_image)]
+    image_id = random.sample(image_id, selected_num_image)
+
+    new_file = dict()
+    new_file["label_names"] = copy.deepcopy(dataset["label_names"])
+    for i in range(selected_num_image):
+        new_file["image_names"].append(dataset["image_names"][image_id[i]])
+        new_file["image_labels"].append(dataset["image_labels"][image_id[i]])
+
+    with open(output, "w") as f:
+        json.dump(new_file, f)
+

@@ -104,6 +104,8 @@ for id in except_class_list:
 
 num = 0
 
+sansyou = defaultdict(list)
+
 new_val_class = []
 
 while num < val_num:
@@ -112,6 +114,7 @@ while num < val_num:
     while True:
         new_id = distance_matrix[id].pop()[1]
         if cantidate_dict[new_id] == 2:
+            sansyou[id].append(new_id)
             new_val_class.append(new_id)
             cantidate_dict[new_id] = 1
             break
@@ -127,6 +130,7 @@ while num < train_num + val_num:
     while True:
         new_id = distance_matrix[id].pop()[1]
         if cantidate_dict[new_id] == 2:
+            sansyou[id].append(new_id)
             new_train_class.append(new_id)
             cantidate_dict[new_id] = 1
             break
@@ -155,8 +159,8 @@ for i in range(len(new_val_json["label_names"])):
     new_val_json["image_names"].extend(image_list)
     new_val_json["image_labels"].extend([i] * len(image_list))
 
-with open(output_val_file, "w") as f:
-    json.dump(new_val_json, f)
+#with open(output_val_file, "w") as f:
+#    json.dump(new_val_json, f)
 
 new_train_json = dict()
 new_train_json["label_names"] = []
@@ -179,9 +183,12 @@ for i in range(len(new_train_json["label_names"])):
     new_train_json["image_names"].extend(image_list)
     new_train_json["image_labels"].extend([i] * len(image_list))
 
-with open(output_train_file, "w") as f:
-    json.dump(new_train_json, f)
+#with open(output_train_file, "w") as f:
+#    json.dump(new_train_json, f)
 
+for id in sansyou:
+    print(id)
+    print(sansyou[id])
 
 
 

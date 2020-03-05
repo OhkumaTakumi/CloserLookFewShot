@@ -21,6 +21,7 @@ from methods.matchingnet import MatchingNet
 from methods.relationnet import RelationNet
 from methods.maml import MAML
 from io_utils import model_dict, parse_args, get_resume_file, get_best_file , get_assigned_file
+from instance_selection.task_eval import task_image_read, task_evaluation
 
 def feature_evaluation(cl_data_file, model, n_way = 5, n_support = 5, n_query = 15, adaptation = False):
     class_list = cl_data_file.keys()
@@ -33,7 +34,7 @@ def feature_evaluation(cl_data_file, model, n_way = 5, n_support = 5, n_query = 
         z_all.append( [ np.squeeze( img_feat[perm_ids[i]]) for i in range(n_support+n_query) ] )     # stack each batch
 
     z_all = torch.from_numpy(np.array(z_all) )
-   
+
     model.n_query = n_query
     if adaptation:
         scores  = model.set_forward_adaptation(z_all, is_feature = True)
@@ -43,6 +44,8 @@ def feature_evaluation(cl_data_file, model, n_way = 5, n_support = 5, n_query = 
     y = np.repeat(range( n_way ), n_query )
     acc = np.mean(pred == y)*100 
     return acc
+
+
 
 if __name__ == '__main__':
     params = parse_args('test')
@@ -104,8 +107,27 @@ if __name__ == '__main__':
         checkpoint_dir += '_aug'
     if params.selection_classes != -1:
         checkpoint_dir += "_{0}classes".format(params.selection_classes)
-    if not params.method in ['baseline', 'baseline++'] :
-        checkpoint_dir += '_%dway_%dshot' %( params.train_n_way, params.n_shot)
+    if params.new_method != 0:
+        checkpoint_dir += "_{0}method".format(params.new_method)
+
+    if params.dataset == "selected_data":
+        checkpoint_dir += "_{0}task_{1}selection_epoch_{2}train_image".format(params.prepared_task, params.selection_epoch, params.total_image_num - params.val_image_num)
+
+    if params.dataset == "random_selected_data":
+        checkpoint_dir += "_{0}train_image".format(params.total_image_num - params.val_image_num)
+
+    if params.dataset == "same_num_data":
+        checkpoint_dir += "_{0}class_{1}image".format(params.used_class_num, params.every_class_image_num)
+
+    if not params.method in ['baseline', 'baseline++']:
+        try:
+            checkpoint_dir2 = checkpoint_dir + '_%dway_%dshot' %( params.train_n_way, params.n_shot)
+            torch.load(get_best_file(checkpoint_dir2))
+            checkpoint_dir = checkpoint_dir2
+        except:
+            checkpoint_dir += '_%dway_%dshot' % (params.train_n_way, 5)
+
+
 
     #modelfile   = get_resume_file(checkpoint_dir)
 
@@ -155,8 +177,14 @@ if __name__ == '__main__':
             model.eval()
             acc_mean, acc_std = model.test_loop( novel_loader, return_std = True)
 
+        elif params.prepared_task != -1:
+            task_images = task_image_read(params.prepared_task, params.test_n_way, params.n_shot, n_query=40)
+            acc = task_evaluation(task_images, model, n_way=params.test_n_way, n_query=40)
+            print('Test Acc = %4.2f%%' %(acc))
+
         else:
             novel_file = os.path.join( checkpoint_dir.replace("checkpoints","features"), split_str +".hdf5") #defaut split = novel, but you can also test base or val classes
+            print(novel_file)
             print(novel_file)
             cl_data_file = feat_loader.init_loader(novel_file)
 
@@ -175,14 +203,51 @@ if __name__ == '__main__':
             aug_str = '-aug' if params.train_aug else ''
             if params.selection_classes != -1:
                 aug_str += "_{0}classes".format(params.selection_classes)
+            if params.new_method != 0:
+                aug_str += "_{0}method".format(params.new_method)
             aug_str += '-adapted' if params.adaptation else ''
 
             if params.train_class == 'CUB_mini':
                 params.dataset = "CUB_mini"
 
+            if params.train_class == "all_Imagenet":
+                params.dataset = "all_Imagenet"
+
             if params.method in ['baseline', 'baseline++'] :
-                exp_setting = '%s-%s-%s-%s%s %sshot %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str, params.n_shot, params.test_n_way )
+                if params.prepared_task == -1:
+                    exp_setting = '%s-%s-%s-%s%s %sshot %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str, params.n_shot, params.test_n_way )
+                else:
+                    exp_setting = '%s-%s-%s-%s%s %sshot %sway_test task%s' % (params.dataset, split_str, params.model, params.method, aug_str, params.n_shot, params.test_n_way, params.prepared_task)
+
             else:
-                exp_setting = '%s-%s-%s-%s%s %sshot %sway_train %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str , params.n_shot , params.train_n_way, params.test_n_way )
-            acc_str = '%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num))
+                if params.prepared_task == -1:
+                    exp_setting = '%s-%s-%s-%s%s %sshot %sway_train %sway_test' %(params.dataset, split_str, params.model, params.method, aug_str , params.n_shot , params.train_n_way, params.test_n_way )
+                else:
+                    exp_setting = '%s-%s-%s-%s%s %sshot %sway_train %sway_test task%s' % (params.dataset, split_str, params.model, params.method, aug_str, params.n_shot, params.train_n_way, params.test_n_way, params.prepared_task)
+
+            if params.test_dataset_CUB:
+                exp_setting += '_CUB'
+
+            if params.prepared_task == -1:
+
+                if params.dataset == "same_num_data":
+                    acc_str = "_{0}class_{1}image".format(params.used_class_num, params.every_class_image_num)
+                    acc_str += '%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num))
+                elif params.dataset == "random_selected_data":
+                    acc_str = "_{0}train_image ".format(params.total_image_num - params.val_image_num)
+                    acc_str += '%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num))
+                else:
+                    acc_str = '%d Test Acc = %4.2f%% +- %4.2f%%' %(iter_num, acc_mean, 1.96* acc_std/np.sqrt(iter_num))
+            else:
+                if params.dataset == "selected_data":
+                    acc_str = "_{0}task_{1}selection_epoch_{2}train_image ".format(params.prepared_task, params.selection_epoch, params.total_image_num - params.val_image_num)
+                    acc_str += 'Test Acc = %4.2f%%' % (acc)
+                elif params.dataset == "random_selected_data":
+                    acc_str = "_{0}task_{1}train_image".format(params.prepared_task, params.total_image_num - params.val_image_num)
+                    acc_str += 'Test Acc = %4.2f%%' % (acc)
+
+                else:
+                    acc_str = 'Test ACC = %4.2f%%' % (acc)
+
+
             f.write( 'Time: %s, Setting: %s, Acc: %s \n' %(timestamp,exp_setting,acc_str)  )

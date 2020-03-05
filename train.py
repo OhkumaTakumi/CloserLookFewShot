@@ -7,6 +7,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 import time
 import os
 import glob
+from matplotlib import  pyplot as plt
 
 import configs
 import backbone
@@ -20,15 +21,38 @@ from methods.maml import MAML
 from io_utils import model_dict, parse_args, get_resume_file
 
 from class_selection import classselection
+from instance_selection.image_selection import selection_trainval, selection_trainval2
 
 def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch, params):
 
+    optimizer_path = os.path.join(params.checkpoint_dir, 'optimizer.pth')
+
     if optimization == 'Adam':
         optimizer = torch.optim.Adam(model.parameters())
+        if params.resume:
+            try:
+                optimizer.load_state_dict(torch.load(optimizer_path))
+                print("optimizer loaded", (start_epoch,stop_epoch))
+            except:
+                pass
     else:
        raise ValueError('Unknown optimization, please define by yourself')
 
-    max_acc = 0       
+    max_acc = 0
+
+    #plt.ion()
+    #fig = plt.figure(figsize=(10, 6))
+    #plt.title(params.checkpoint_dir)  ## グラフタイトル（必須ではない）
+    #plt.xlabel('epoch')  ## x軸ラベル（必須ではない）
+    #plt.ylabel('accuracy')  ## y軸ラベル（必須ではない）
+    #plt.ylim(0, 25)  ## y軸範囲固定（必須ではない）
+    #plt.grid()
+
+    epoch_list = np.array([])
+    acc_list = np.array([])
+    if params.resume and os.path.exists(os.path.join(params.checkpoint_dir, "acc_list.npy")):
+        epoch_list = np.load(os.path.join(params.checkpoint_dir, "epoch_list.npy"))
+        acc_list = np.load(os.path.join(params.checkpoint_dir, "acc_list.npy"))
 
     for epoch in range(start_epoch,stop_epoch):
         print(stop_epoch)
@@ -41,9 +65,15 @@ def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch,
             if not os.path.isdir(params.checkpoint_dir):
                 os.makedirs(params.checkpoint_dir)
 
-            acc = model.test_loop( val_loader)
 
-        if acc > max_acc : #for baseline and baseline++, we don't use validation in default and we let acc = -1, but we allow options to validate with DB index
+            if epoch % 10 == 0:
+
+                acc = model.test_loop( val_loader)
+                acc_list = np.append(acc_list, acc)
+                epoch_list = np.append(epoch_list, epoch)
+
+
+        if epoch % 10 == 0 and acc > max_acc and not params.method in ['baseline', 'baseline++']: #for baseline and baseline++, we don't use validation in default and we let acc = -1, but we allow options to validate with DB index
             print("best model! save...")
             max_acc = acc
             outfile = os.path.join(params.checkpoint_dir, 'best_model.tar')
@@ -56,7 +86,20 @@ def train(base_loader, val_loader, model, optimization, start_epoch, stop_epoch,
             torch.save({'epoch':epoch, 'state':model.state_dict()}, outfile)
             print("Saved!")
 
+            torch.save(optimizer.state_dict(), optimizer_path)
+
+
+            np.save(os.path.join(params.checkpoint_dir, "acc_list"), acc_list)
+            np.save(os.path.join(params.checkpoint_dir, "epoch_list"), epoch_list)
+
+        #plt.plot(epoch_list, acc_list, color='red')
+        #plt.draw()
+        #plt.pause(0.001)
+        #plt.savefig(os.path.join(params.checkpoint_dir, 'accuracy.png'))
+
         print(params.checkpoint_dir)
+
+
 
     return model
 
@@ -64,12 +107,25 @@ if __name__=='__main__':
     np.random.seed(10)
     params = parse_args('train')
 
+
     if params.dataset == 'cross':
         base_file = configs.data_dir['miniImagenet'] + 'all.json'
         val_file   = configs.data_dir['CUB'] + 'val.json' 
     elif params.dataset == 'cross_char':
         base_file = configs.data_dir['omniglot'] + 'noLatin.json' 
         val_file   = configs.data_dir['emnist'] + 'val.json'
+    elif params.dataset == 'cluster_cross':
+        base_file = "/home/takumi/research/deepcluster/subdivision4_miniImagenet_base.json"
+        val_file = configs.data_dir['CUB'] + 'val.json'
+        params.num_classes = 256
+    elif params.dataset == 'cluster':
+        base_file = "/home/takumi/research/deepcluster/subdivision4_miniImagenet_base.json"
+        val_file = configs.data_dir['miniImagenet'] + 'val.json'
+        params.num_classes = 256
+    elif params.dataset == 'cluster_thesaurus':
+        base_file = "/home/takumi/research/deepcluster/subdivision4_thesaurus_base.json"
+        val_file = configs.data_dir['miniImagenet'] + 'val.json'
+        params.num_classes = 256
     elif params.dataset == 'CUB' and params.train_class == "CUB_mini":
         base_file = "/home/takumi/research/CloserLookFewShot/filelists/base_CUB_miniImagenet.json"
         val_file = configs.data_dir[params.dataset] + 'val.json'
@@ -78,15 +134,56 @@ if __name__=='__main__':
         base_file = "/home/takumi/research/CloserLookFewShot/filelists/all_Imagenet.json"
         val_file = configs.data_dir[params.dataset] + 'val.json'
         params.num_classes = 964
+    elif params.dataset == "full_Imagenet_except_test":
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/full_Imagenet_train_except_testclass.json"
+        val_file = "/home/takumi/research/CloserLookFewShot/filelists/full_Imagenet_val_except_testclass.json"
+        params.num_classes = 964
+    elif params.dataset == "selected_data" and params.prepared_task != -1:
+        params.num_classes = selection_trainval(params.prepared_task, params.selection_epoch, params.total_image_num, params.val_image_num)
+        base_file = "/home/takumi/research/CloserLookFewShot/instance_selection/task/{0}_{1}_{2}selected_train.json".format(params.prepared_task, params.selection_epoch, params.total_image_num)
+        val_file = "/home/takumi/research/CloserLookFewShot/instance_selection/task/{0}_{1}_{2}selected_val.json".format(params.prepared_task, params.selection_epoch, params.total_image_num)
+    elif params.dataset == "random_selected_data":
+        params.num_classes = selection_trainval(0, 300, params.total_image_num, params.val_image_num, random_select=True)
+        base_file = "/home/takumi/research/CloserLookFewShot/instance_selection/task/{0}random_selected_train.json".format(params.total_image_num)
+        val_file = "/home/takumi/research/CloserLookFewShot/instance_selection/task/{0}random_selected_val.json".format(params.total_image_num)
+    elif params.dataset == "same_num_data":
+
+        params.num_classes = params.used_class_num 
+        if not params.resume: 
+            selection_trainval2(0, 300, params.every_class_image_num, params.used_class_num, params.used_val_class_num)
+        base_file = "/home/takumi/research/CloserLookFewShot/instance_selection/{0}class_{1}images_train.json".format(params.used_class_num, params.every_class_image_num)
+        val_file = "/home/takumi/research/CloserLookFewShot/instance_selection/{0}class_{1}images_val.json".format(params.used_class_num, params.every_class_image_num)
+
     else:
         base_file = configs.data_dir[params.dataset] + 'base.json' 
         val_file   = configs.data_dir[params.dataset] + 'val.json'
 
     if params.selection_classes != -1:
         output = "/home/takumi/research/CloserLookFewShot/filelists/sub_classes.json"
-        classselection(base_file, params.selection_classes, output)
+        #classselection(base_file, params.selection_classes, output)
         base_file = output
         params.num_classes = params.selection_classes
+
+    if params.new_method == 1:
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method_train_Imagenet.json"
+        val_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method_val_Imagenet.json"
+    if params.new_method == 2:
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method2_train_Imagenet.json"
+        val_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method2_val_Imagenet.json"
+    if params.new_method == 3:
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method3_train_Imagenet.json"
+        val_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method3_val_Imagenet.json"
+        params.num_classes = 256
+    if params.new_method == 4:
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method4_train_Imagenet.json"
+        val_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method4_val_Imagenet.json"
+    if params.new_method == 5:
+        base_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method5_train_Imagenet.json"
+        val_file = "/home/takumi/research/CloserLookFewShot/filelists/new_method5_val_Imagenet.json"
+        params.num_classes = 256
+
+
+
 
          
     if 'Conv' in params.model:
@@ -104,7 +201,7 @@ if __name__=='__main__':
     optimization = 'Adam'
 
     if params.stop_epoch == -1: 
-        if params.method in ['baseline', 'baseline++'] :
+        if params.method in ['baseline', 'baseline++']:
             if params.dataset in ['omniglot', 'cross_char']:
                 params.stop_epoch = 5
             elif params.train_class == "CUB_mini":
@@ -116,7 +213,7 @@ if __name__=='__main__':
             else:
                 params.stop_epoch = 400 #default
         elif params.method == 'maml' or params.method == 'maml_approx':
-            params.stop_epoch = 200
+            params.stop_epoch = 400
         else: #meta-learning methods
             if params.n_shot == 1:
                 params.stop_epoch = 600
@@ -195,10 +292,24 @@ if __name__=='__main__':
         params.checkpoint_dir = '%s/checkpoints/%s/%s_%s' % (configs.save_dir, "all_Imagenet", params.model, params.method)
 
 
+
     if params.train_aug:
         params.checkpoint_dir += '_aug'
     if params.selection_classes != -1:
         params.checkpoint_dir += "_{0}classes".format(params.selection_classes)
+    if params.new_method != 0:
+        params.checkpoint_dir += "_{0}method".format(params.new_method)
+
+    if params.prepared_task != -1:
+        params.checkpoint_dir += "_{0}task_{1}selection_epoch_{2}train_image".format(params.prepared_task, params.selection_epoch, params.total_image_num - params.val_image_num)
+
+    if params.dataset == "random_selected_data":
+        params.checkpoint_dir += "_{0}train_image".format(params.total_image_num - params.val_image_num)
+
+    if params.dataset == "same_num_data":
+        params.checkpoint_dir += "_{0}class_{1}image".format(params.used_class_num, params.every_class_image_num)
+
+
     if not params.method  in ['baseline', 'baseline++']: 
         params.checkpoint_dir += '_%dway_%dshot' %( params.train_n_way, params.n_shot)
 
@@ -214,6 +325,8 @@ if __name__=='__main__':
 
     if params.resume:
         resume_file = get_resume_file(params.checkpoint_dir)
+
+
         if resume_file is not None:
             tmp = torch.load(resume_file)
             start_epoch = tmp['epoch']+1
@@ -225,6 +338,8 @@ if __name__=='__main__':
             baseline_checkpoint_dir += '_aug'
         if params.selection_classes != -1:
             baseline_checkpoint_dir += "_{0}classes".format(params.selection_classes)
+        if params.new_method != 0:
+            baseline_checkpoint_dir += "_{0}method".format(params.new_method)
         warmup_resume_file = get_resume_file(baseline_checkpoint_dir)
         tmp = torch.load(warmup_resume_file)
         if tmp is not None: 

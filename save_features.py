@@ -66,9 +66,31 @@ if __name__ == '__main__':
         if split == 'base':
             loadfile = configs.data_dir['omniglot'] + 'noLatin.json' 
         else:
-            loadfile  = configs.data_dir['emnist'] + split +'.json' 
+            loadfile  = configs.data_dir['emnist'] + split +'.json'
+    elif params.dataset == 'cluster_cross':
+        if split == 'base':
+            loadfile = "/home/takumi/research/deepcluster/subdivision4_miniImagenet_base.json"
+        else:
+            loadfile  = configs.data_dir['CUB'] + split +'.json'
+    elif params.dataset == 'cluster':
+        if split == 'base':
+            loadfile = "/home/takumi/research/deepcluster/subdivision4_miniImagenet_base.json"
+        else:
+            loadfile  = configs.data_dir['miniImagenet'] + split +'.json'
+    elif params.dataset == 'cluster_thesaurus':
+        if split == 'base':
+            loadfile = "/home/takumi/research/deepcluster/subdivision4_thesaurus_base.json"
+        else:
+            loadfile  = configs.data_dir['miniImagenet'] + split +'.json'
+    elif params.test_dataset_CUB == True:
+        loadfile = configs.data_dir['CUB'] + split + '.json'
+    elif params.dataset == "full_Imagenet_except_test" or params.dataset == "random_selected_data" or params.dataset == "same_num_data":
+        loadfile = configs.data_dir['miniImagenet'] + split + '.json'
+
     else:
         loadfile = configs.data_dir[params.dataset] + split + '.json'
+
+    print(loadfile)
 
     checkpoint_dir = '%s/checkpoints/%s/%s_%s' %(configs.save_dir, params.dataset, params.model, params.method)
 
@@ -81,8 +103,27 @@ if __name__ == '__main__':
         checkpoint_dir += '_aug'
     if params.selection_classes != -1:
         checkpoint_dir += "_{0}classes".format(params.selection_classes)
+    if params.new_method != 0:
+        checkpoint_dir += "_{0}method".format(params.new_method)
+
+    if params.dataset == "random_selected_data":
+        checkpoint_dir += "_{0}train_image".format(params.total_image_num - params.val_image_num)
+
+    if params.dataset == "same_num_data":
+        checkpoint_dir += "_{0}class_{1}image".format(params.used_class_num, params.every_class_image_num)
+
+
+
     if not params.method in ['baseline', 'baseline++'] :
-        checkpoint_dir += '_%dway_%dshot' %( params.train_n_way, params.n_shot)
+        try:
+            checkpoint_dir2 = checkpoint_dir + '_%dway_%dshot' %( params.train_n_way, params.n_shot)
+            torch.load(get_best_file(checkpoint_dir2))
+            checkpoint_dir = checkpoint_dir2
+        except:
+            checkpoint_dir += '_%dway_%dshot' % (params.train_n_way, 5)
+            get_best_file(checkpoint_dir)
+
+    print(checkpoint_dir)
 
     if params.save_iter != -1:
         modelfile   = get_assigned_file(checkpoint_dir,params.save_iter)
